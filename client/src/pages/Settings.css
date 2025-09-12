@@ -1,0 +1,75 @@
+.settings-container {
+    max-width: 600px;
+    margin: auto;
+    margin-top: 6rem;
+    padding: 30px;
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.settings-container h2 {
+    text-align: center;
+    margin-bottom: 20px;
+    font-family: "Poppins", sans-serif;
+}
+
+.social-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.social-buttons button {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    border: none;
+    padding: 12px 18px;
+    border-radius: 6px;
+    font-size: 16px;
+    cursor: pointer;
+    color: #fff;
+    font-family: "Poppins", sans-serif;
+    transition: transform 0.2s;
+}
+
+.social-buttons button .icon {
+    font-size: 18px;
+}
+
+.social-buttons button:hover {
+    transform: translateY(-2px);
+}
+
+.fb {
+    background: #1877f2;
+}
+
+.fb.connected {
+    background: #145db2;
+}
+
+.ig {
+    background: linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%);
+}
+
+.ig.connected {
+    filter: brightness(0.85);
+}
+
+.li {
+    background: #0a66c2;
+}
+
+.li.connected {
+    background: #094a91;
+}
+
+.tw {
+    background: #1da1f2;
+}
+
+.tw.connected {
+    background: #1681bf;
+}
