@@ -1,13 +1,12 @@
 const express = require('express');
 const router = express.Router();
-const platformController = require('../controllers/platformController');
-const verifyN8n = require('../middleware/verifyN8n');
-const auth = require('../middleware/auth');
+const { connectPlatform, getPlatform } = require('../controllers/platformController');
+const authMiddleware = require('../middleware/auth');
 
-// For n8n callback after FB auth
-router.post('/webhook/facebook/callback', verifyN8n, platformController.connectPlatform);
+// Save token after OAuth callback
+router.post('/platform/:platform', authMiddleware, connectPlatform);
 
-// For frontend to check if FB is connected
-router.get('/facebook', auth, platformController.getPlatform);
+// Get connection status
+router.get('/platform/:platform', authMiddleware, getPlatform);
 
 module.exports = router;

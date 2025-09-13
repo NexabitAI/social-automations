@@ -1,13 +1,13 @@
-// controllers/platformController.js
 const User = require('../models/User');
 
+// Save platform auth dynamically
 const connectPlatform = async (req, res) => {
     try {
-        // n8n will POST { userId, authData: { pageId, pageName, pageAccessToken } }
+        const { platform } = req.params; // 'facebook', 'instagram', etc.
         const { userId, authData } = req.body;
 
-        if (!userId || !authData) {
-            return res.status(400).json({ success: false, message: 'Missing userId or authData' });
+        if (!platform || !userId || !authData) {
+            return res.status(400).json({ success: false, message: 'Missing platform, userId, or authData' });
         }
 
         const user = await User.findById(userId);
@@ -15,37 +15,37 @@ const connectPlatform = async (req, res) => {
 
         // Ensure platformAuth exists
         user.platformAuth = user.platformAuth || {};
-        user.platformAuth.facebook = {
-            ...user.platformAuth.facebook,
-            pageId: authData.pageId,
-            pageName: authData.pageName,
-            accessToken: authData.pageAccessToken,
+
+        // Save auth data dynamically
+        user.platformAuth[platform] = {
+            ...user.platformAuth[platform],
+            ...authData,
             connectedAt: new Date()
         };
 
         await user.save();
 
-        return res.json({ success: true, message: 'Facebook connected successfully' });
+        return res.json({ success: true, message: `${platform} connected successfully` });
     } catch (err) {
         console.error('connectPlatform error', err);
-        return res.status(500).json({ success: false, message: 'Server error connecting Facebook' });
+        return res.status(500).json({ success: false, message: 'Server error connecting platform' });
     }
 };
 
+// Get platform connection status dynamically
 const getPlatform = async (req, res) => {
     try {
-        const user = await User.findById(req.user.id).select('platformAuth.facebook');
+        const { platform } = req.params; // 'facebook', 'instagram', etc.
+        const user = await User.findById(req.user.id).select(`platformAuth.${platform}`);
 
-        if (!user || !user.platformAuth || !user.platformAuth.facebook) {
+        if (!user || !user.platformAuth || !user.platformAuth[platform]) {
             return res.json({ isConnected: false });
         }
 
-        const fb = user.platformAuth.facebook;
+        const p = user.platformAuth[platform];
         return res.json({
-            isConnected: !!fb.accessToken,
-            pageId: fb.pageId,
-            pageName: fb.pageName,
-            connectedAt: fb.connectedAt || null
+            isConnected: !!p.accessToken,
+            ...p
         });
     } catch (err) {
         console.error('getPlatform error', err);
