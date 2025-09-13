@@ -8,7 +8,7 @@ const Sidebar = () => {
 
     return (
         <div className="sidebar">
-            <div className="sidebar-header">Social Scheduler</div>
+            <div className="sidebar-header">Social Schedulerzz</div>
             <ul className="sidebar-menu">
                 <li className={location.pathname === "/" ? "active" : ""}>
                     <Link to="/">

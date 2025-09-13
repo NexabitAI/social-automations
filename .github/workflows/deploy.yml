@@ -1,0 +1,36 @@
+name: Deploy Social Automations
+
+on:
+  push:
+    branches:
+      - main  
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Deploy to VPS
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          script: |
+            # === Frontend ===
+            cd /var/www/social-automations/client
+            git reset --hard
+            git pull origin main
+            npm install --legacy-peer-deps
+            npm run build
+            pm2 restart social-frontend || pm2 start npm --name social-frontend -- run start
+
+            # === Backend ===
+            cd /var/www/social-automations/server
+            git reset --hard
+            git pull origin main
+            npm install --legacy-peer-deps
+            pm2 restart social-backend || pm2 start server.js --name social-backend --watch
