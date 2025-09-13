@@ -37,7 +37,7 @@ const Settings = () => {
 
         // Open OAuth in a new tab/window
         window.open(
-            `${process.env.REACT_APP_BACKEND_URL}/api/platforms/${platform}/login?token=${token}`,
+            `${process.env.REACT_APP_BACKEND_URL}/api/platforms/${platform}/auth?token=${token}`,
             "_blank"
         );
 
@@ -56,6 +56,7 @@ const Settings = () => {
             }
         }, 3000);
     };
+
 
     return (
         <div className="settings-container">
