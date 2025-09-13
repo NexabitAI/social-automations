@@ -1,9 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { FaFacebookF, FaInstagram, FaLinkedinIn, FaTwitter } from "react-icons/fa";
-import jwtDecode from "jwt-decode";
 import "./Settings.css";
 import api from "../api/api";
-
+import { jwtDecode } from "jwt-decode";
 const Settings = () => {
     const [connected, setConnected] = useState({
         facebook: false,
