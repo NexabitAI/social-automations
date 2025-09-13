@@ -5,8 +5,8 @@ import {
     FaLinkedinIn,
     FaTwitter,
 } from "react-icons/fa";
-import axios from "axios";
 import "./Settings.css";
+import api from "../api/api";
 
 const Settings = () => {
     const [connected, setConnected] = useState({
@@ -20,7 +20,7 @@ const Settings = () => {
         const fetchUser = async () => {
             const token = localStorage.getItem("token");
             try {
-                const res = await axios.get("http://localhost:5000/api/auth/me", {
+                const res = await api.get("/api/auth/me", {
                     headers: { "x-auth-token": token }
                 });
 
@@ -40,40 +40,25 @@ const Settings = () => {
         fetchUser();
     }, []);
 
-    const connectFacebook = () => {
+    const connectSocial = (platform) => {
         const token = localStorage.getItem("token");
-        window.location.href = `http://localhost:5000/api/facebook/login?token=${token}`;
-    };
-
-    const connectInstagram = () => {
-        const token = localStorage.getItem("token");
-        window.location.href = `http://localhost:5000/api/instagram/login?token=${token}`;
-    };
-
-    const connectLinkedIn = () => {
-        const token = localStorage.getItem("token");
-        window.location.href = `http://localhost:5000/api/linkedin/login?token=${token}`;
-    };
-
-    const connectTwitter = () => {
-        const token = localStorage.getItem("token");
-        window.location.href = `http://localhost:5000/api/twitter/login?token=${token}`;
+        window.location.href = `${process.env.REACT_APP_BACKEND_URL}/api/${platform}/login?token=${token}`;
     };
 
     return (
         <div className="settings-container">
             <h2>Social Accounts</h2>
             <div className="social-buttons">
-                <button className={`fb ${connected.facebook ? "connected" : ""}`} onClick={connectFacebook}>
+                <button className={`fb ${connected.facebook ? "connected" : ""}`} onClick={() => connectSocial("facebook")}>
                     <FaFacebookF className="icon" /> {connected.facebook ? "Connected" : "Connect Facebook"}
                 </button>
-                <button className={`ig ${connected.instagram ? "connected" : ""}`} onClick={connectInstagram}>
+                <button className={`ig ${connected.instagram ? "connected" : ""}`} onClick={() => connectSocial("instagram")}>
                     <FaInstagram className="icon" /> {connected.instagram ? "Connected" : "Connect Instagram"}
                 </button>
-                <button className={`li ${connected.linkedin ? "connected" : ""}`} onClick={connectLinkedIn}>
+                <button className={`li ${connected.linkedin ? "connected" : ""}`} onClick={() => connectSocial("linkedin")}>
                     <FaLinkedinIn className="icon" /> {connected.linkedin ? "Connected" : "Connect LinkedIn"}
                 </button>
-                <button className={`tw ${connected.twitter ? "connected" : ""}`} onClick={connectTwitter}>
+                <button className={`tw ${connected.twitter ? "connected" : ""}`} onClick={() => connectSocial("twitter")}>
                     <FaTwitter className="icon" /> {connected.twitter ? "Connected" : "Connect Twitter"}
                 </button>
             </div>

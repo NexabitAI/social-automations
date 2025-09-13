@@ -1,7 +1,8 @@
 import React, { useState } from "react";
-import axios from "axios";
 import { useNavigate, Link } from "react-router-dom";
+
 import "./Login.css";
+import api from "../api/api";
 
 const Login = ({ setUser }) => {
     const [email, setEmail] = useState("");
@@ -10,21 +11,17 @@ const Login = ({ setUser }) => {
 
     const handleLogin = async (e) => {
         e.preventDefault();
-        try {
-            const res = await axios.post("http://localhost:5000/api/auth/login", {
-                email,
-                password,
-            });
 
-            const userData = res.data.user;
-            const token = res.data.token;
-            const userid = res.data.userid; // ✅ backend now sends userid
+        try {
+            const res = await api.post("/api/auth/login", { email, password });
+
+            const { user, token, userid } = res.data;
 
             // Save in localStorage
             localStorage.setItem("token", token);
             localStorage.setItem("userid", userid);
 
-            setUser(userData);
+            setUser(user);
             navigate("/");
         } catch (err) {
             console.error(err.response?.data || err.message);

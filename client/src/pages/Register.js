@@ -1,7 +1,7 @@
 import React, { useState } from "react";
-import axios from "axios";
 import { useNavigate, Link } from "react-router-dom";
 import "./Register.css";
+import api from "../api/api";
 
 const Register = ({ setUser }) => {
     const [name, setName] = useState("");
@@ -19,21 +19,19 @@ const Register = ({ setUser }) => {
         }
 
         try {
-            const res = await axios.post("http://localhost:5000/api/auth/register", {
+            const res = await api.post("/api/auth/register", {
                 username: name,
                 email,
                 password,
             });
 
-            const userData = res.data.user;
-            const token = res.data.token;
-            const userid = res.data.userid; // ✅ backend sends this now
+            const { user, token, userid } = res.data;
 
             // Store in localStorage
             localStorage.setItem("token", token);
             localStorage.setItem("userid", userid);
 
-            setUser(userData);
+            setUser(user);
             navigate("/");
         } catch (err) {
             console.error(err.response?.data || err.message);
