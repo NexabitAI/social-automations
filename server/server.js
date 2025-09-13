@@ -5,7 +5,7 @@ require('dotenv').config();
 const connectDB = require('./config/database');
 const authRoutes = require('./routes/auth');
 const platformRoutes = require('./routes/platforms');
-const platformCallbackRoutes = require('./routes/platformCallback'); // <---
+const platformCallbackRoutes = require('./routes/facebookCallback'); // <---
 const postRoutes = require('./routes/posts');
 
 connectDB();
