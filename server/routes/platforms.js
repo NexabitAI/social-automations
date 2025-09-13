@@ -11,7 +11,7 @@ const router = express.Router();
  * Redirect user to platform OAuth
  * Example: GET /api/platforms/facebook/auth?token=USER_JWT
  */
-router.get('/:platform/auth', (req, res) => {
+router.get('/:platform/auth', async (req, res) => {
     const { platform } = req.params;
     const { token } = req.query; // JWT of logged-in SaaS user
 
@@ -19,12 +19,45 @@ router.get('/:platform/auth', (req, res) => {
 
     switch (platform) {
         case 'facebook': {
-            const fbAppId = process.env.FB_APP_ID;
-            const redirectUri = `${process.env.BACKEND_URL}/api/platforms/facebook/callback`;
-            const scope = 'pages_manage_posts,pages_read_engagement,pages_show_list';
-            const url = `https://www.facebook.com/v17.0/dialog/oauth?client_id=${fbAppId}&redirect_uri=${encodeURIComponent(redirectUri)}&state=${token}&scope=${scope}`;
-            return res.redirect(url);
+            try {
+                const fbAppId = process.env.FB_APP_ID;
+                const fbAppSecret = process.env.FB_APP_SECRET;
+                const redirectUri = `${process.env.BACKEND_URL}/api/platforms/facebook/callback`;
+
+                // Exchange code for user access token
+                const tokenRes = await axios.get('https://graph.facebook.com/v17.0/oauth/access_token', {
+                    params: { client_id: fbAppId, client_secret: fbAppSecret, redirect_uri: redirectUri, code }
+                });
+                console.log("Facebook token response:", tokenRes.data);
+
+                const userAccessToken = tokenRes.data.access_token;
+
+                // Get pages
+                const pagesRes = await axios.get('https://graph.facebook.com/me/accounts', {
+                    params: { access_token: userAccessToken }
+                });
+                console.log("Pages response:", pagesRes.data);
+
+                const pages = pagesRes.data.data;
+                if (!pages.length) return res.send("No pages found");
+
+                // Save first page
+                await axios.post(`${process.env.BACKEND_URL}/api/platforms/facebook`, {
+                    userId,
+                    authData: {
+                        pageId: pages[0].id,
+                        pageName: pages[0].name,
+                        pageAccessToken: pages[0].access_token
+                    }
+                });
+
+                return res.send("Facebook connected successfully! You can close this tab.");
+            } catch (err) {
+                console.error("Facebook OAuth error:", err.response?.data || err.message);
+                return res.status(500).send("OAuth failed");
+            }
         }
+
 
         case 'instagram': {
             const igAppId = process.env.FB_APP_ID; // IG uses FB App
