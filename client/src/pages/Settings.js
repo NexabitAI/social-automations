@@ -1,10 +1,5 @@
 import React, { useEffect, useState } from "react";
-import {
-    FaFacebookF,
-    FaInstagram,
-    FaLinkedinIn,
-    FaTwitter,
-} from "react-icons/fa";
+import { FaFacebookF, FaInstagram, FaLinkedinIn, FaTwitter } from "react-icons/fa";
 import "./Settings.css";
 import api from "../api/api";
 
@@ -24,7 +19,7 @@ const Settings = () => {
                 const updatedStatus = {};
                 for (let platform of platforms) {
                     const res = await api.get(`/api/platforms/${platform}`, {
-                        headers: { "x-auth-token": token }
+                        headers: { "x-auth-token": token },
                     });
                     updatedStatus[platform] = res.data.isConnected || false;
                 }
@@ -40,14 +35,17 @@ const Settings = () => {
     const connectSocial = (platform) => {
         const token = localStorage.getItem("token");
 
-        // Open OAuth (or token exchange) in a new window
-        window.open(`${process.env.REACT_APP_BACKEND_URL}/api/platforms/${platform}/login?token=${token}`, "_blank");
+        // Open OAuth in a new tab/window
+        window.open(
+            `${process.env.REACT_APP_BACKEND_URL}/api/platforms/${platform}/login?token=${token}`,
+            "_blank"
+        );
 
-        // Poll backend every 3 seconds until connected
+        // Poll backend every 3 seconds until connection is detected
         const interval = setInterval(async () => {
             try {
                 const res = await api.get(`/api/platforms/${platform}`, {
-                    headers: { "x-auth-token": token }
+                    headers: { "x-auth-token": token },
                 });
                 if (res.data.isConnected) {
                     setConnected(prev => ({ ...prev, [platform]: true }));
