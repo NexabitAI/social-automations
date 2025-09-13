@@ -16,13 +16,13 @@ router.get('/:platform/auth', async (req, res) => {
     const { token } = req.query; // JWT of logged-in SaaS user
 
     if (!token) return res.status(400).send("Missing token");
-
+    const BACKEND_URL = "https://buzzpilot.app"
     switch (platform) {
         case 'facebook': {
             try {
-                const fbAppId = process.env.FB_APP_ID;
-                const fbAppSecret = process.env.FB_APP_SECRET;
-                const redirectUri = `${process.env.BACKEND_URL}/api/platforms/facebook/callback`;
+                const fbAppId = "801376035881109";
+                const fbAppSecret = "407e77add441c7aad5eaca195f7bc980";
+                const redirectUri = `${BACKEND_URL}/api/platforms/facebook/callback`;
 
                 // Exchange code for user access token
                 const tokenRes = await axios.get('https://graph.facebook.com/v17.0/oauth/access_token', {
