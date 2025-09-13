@@ -1,3 +1,4 @@
+// server.js
 const express = require('express');
 const cors = require('cors');
 require('dotenv').config();
@@ -5,26 +6,33 @@ require('dotenv').config();
 const connectDB = require('./config/database');
 const authRoutes = require('./routes/auth');
 const platformRoutes = require('./routes/platforms');
-const platformCallbackRoutes = require('./routes/facebookCallback'); // <---
 const postRoutes = require('./routes/posts');
 
 connectDB();
 
 const app = express();
 
+// CORS
 app.use(cors({
     origin: "https://buzzpilot.app",
     credentials: true,
 }));
+
+// Body parser
 app.use(express.json());
 
 // Routes
 app.use('/api/auth', authRoutes);
-app.use('/api/platforms', platformRoutes);         // dynamic routes
-app.use('/api/platforms', platformCallbackRoutes); // OAuth callbacks
+app.use('/api/platforms', platformRoutes); // <- dynamic platform routes
 app.use('/api/posts', postRoutes);
 
-app.get('/health', (req, res) => res.json({ message: 'Server running' }));
+// Health check
+app.get('/health', (req, res) => {
+    res.json({ message: 'Server is running successfully' });
+});
 
+// Start server
 const PORT = process.env.PORT || 8002;
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+app.listen(PORT, () => {
+    console.log(`Server running in ${process.env.NODE_ENV} mode on port ${PORT}`);
+});
