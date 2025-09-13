@@ -17,39 +17,36 @@ const Settings = () => {
     });
 
     useEffect(() => {
-        const fetchUser = async () => {
+        const fetchUserPlatforms = async () => {
             const token = localStorage.getItem("token");
+            const platforms = ["facebook", "instagram", "linkedin", "twitter"];
             try {
-                const res = await api.get("/api/auth/me", {
-                    headers: { "x-auth-token": token }
-                });
-
-                const user = res.data;
-
-                setConnected({
-                    facebook: !!user.facebook?.pageId,
-                    instagram: !!user.instagram?.profileId,
-                    linkedin: !!user.linkedin?.profileId,
-                    twitter: !!user.twitter?.profileId,
-                });
+                const updatedStatus = {};
+                for (let platform of platforms) {
+                    const res = await api.get(`/api/platforms/${platform}`, {
+                        headers: { "x-auth-token": token }
+                    });
+                    updatedStatus[platform] = res.data.isConnected || false;
+                }
+                setConnected(updatedStatus);
             } catch (err) {
-                console.error("Failed to fetch user:", err);
+                console.error("Failed to fetch platform status:", err);
             }
         };
 
-        fetchUser();
+        fetchUserPlatforms();
     }, []);
 
-    const connectSocial = async (platform) => {
+    const connectSocial = (platform) => {
         const token = localStorage.getItem("token");
 
-        // Open OAuth in new window/tab
-        window.open(`${process.env.REACT_APP_BACKEND_URL}/api/${platform}/login?token=${token}`, "_blank");
+        // Open OAuth (or token exchange) in a new window
+        window.open(`${process.env.REACT_APP_BACKEND_URL}/api/platforms/${platform}/login?token=${token}`, "_blank");
 
-        // Poll backend to check if connection is done
+        // Poll backend every 3 seconds until connected
         const interval = setInterval(async () => {
             try {
-                const res = await api.get(`/api/platform/${platform}`, {
+                const res = await api.get(`/api/platforms/${platform}`, {
                     headers: { "x-auth-token": token }
                 });
                 if (res.data.isConnected) {
@@ -59,9 +56,8 @@ const Settings = () => {
             } catch (err) {
                 console.error(err);
             }
-        }, 3000); // check every 3 seconds
+        }, 3000);
     };
-
 
     return (
         <div className="settings-container">

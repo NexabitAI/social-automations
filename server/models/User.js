@@ -1,67 +1,32 @@
 const mongoose = require('mongoose');
-const bcrypt = require('bcryptjs');
 
-const UserSchema = new mongoose.Schema({
-    username: {
-        type: String,
-        required: true,
-        unique: true,
-        trim: true,
-        minlength: 3
-    },
-    email: {
-        type: String,
-        required: true,
-        unique: true,
-        lowercase: true
-    },
-    password: {
-        type: String,
-        required: true,
-        minlength: 6
-    },
-    // Platform-specific tokens for THIS user
+const userSchema = new mongoose.Schema({
+    username: String,
+    email: String,
+    password: String,
     platformAuth: {
         facebook: {
             pageId: String,
-            accessToken: String, // Will be encrypted before saving
-            pageName: String
+            pageName: String,
+            accessToken: String,
+            connectedAt: Date
         },
         instagram: {
-            igUserId: String,
-            accessToken: String, // Encrypted
-            username: String
+            profileId: String,
+            accessToken: String,
+            connectedAt: Date
         },
         linkedin: {
-            accessToken: String, // Encrypted
-            refreshToken: String, // Encrypted - CRITICAL
-            memberId: String,
-            organizationId: String,
-            organizationName: String
+            profileId: String,
+            accessToken: String,
+            connectedAt: Date
         },
         twitter: {
-            // Twitter API v2 requires OAuth 2.0
-            accessToken: String, // Encrypted
-            refreshToken: String, // Encrypted
-            userId: String
+            profileId: String,
+            accessToken: String,
+            connectedAt: Date
         }
     }
-}, {
-    timestamps: true // Adds createdAt, updatedAt
-});
+}, { timestamps: true });
 
-// Encrypt password before saving
-UserSchema.pre('save', async function (next) {
-    if (!this.isModified('password')) return next();
-    this.password = await bcrypt.hash(this.password, 12);
-    next();
-});
-
-// Compare password for login
-UserSchema.methods.comparePassword = async function (candidatePassword) {
-    return await bcrypt.compare(candidatePassword, this.password);
-};
-
-// TODO: Add pre-save hooks to encrypt platformAuth tokens (using mongoose encryption or 'crypto')
-
-module.exports = mongoose.model('User', UserSchema);
+module.exports = mongoose.model('User', userSchema);
