@@ -18,12 +18,12 @@ app.use(express.json());
 app.use('/api/auth', authRoutes);
 app.use('/api/platforms', platformRoutes);
 app.use('/api/posts', postRoutes);
-app.use("/api/facebook", facebookRoutes);
+// app.use("/api/facebook", facebookRoutes);
 app.get('/health', (req, res) => {
     res.json({ message: 'Server is running successfully' });
 });
 
-const PORT = process.env.PORT || 5001;
+const PORT = process.env.PORT || 8003;
 
 app.listen(PORT, () => {
     console.log(`Server running in ${process.env.NODE_ENV} mode on port ${PORT}`);
