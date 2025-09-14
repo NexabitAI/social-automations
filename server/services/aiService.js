@@ -44,4 +44,4 @@ async function generatePost(prompt) {
     return { text, imageUrl };
 }
 
-module.exports = { generatePost };
+module.exports = { generateText, generateImage, generatePost };

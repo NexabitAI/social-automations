@@ -11,6 +11,8 @@ import {
 import "react-toastify/dist/ReactToastify.css";
 import { ToastContainer, toast } from "react-toastify";
 
+const API_URL = "https://buzzpilot.app/api";
+
 const Posts = () => {
     const [content, setContent] = useState("");
     const [platform, setPlatform] = useState("facebook");
@@ -22,33 +24,36 @@ const Posts = () => {
 
         const token = localStorage.getItem("token");
         if (!content || !scheduledTime) {
-            toast.error("Please fill in content and scheduled time.");
+            toast.error("⚠️ Please fill in content and scheduled time.");
             return;
         }
 
         try {
-            const API_URL = "https://buzzpilot.app/api";
-
             const res = await axios.post(
                 `${API_URL}/posts`,
-                { content, platform, scheduledTime },
+                {
+                    content: {
+                        text: content,
+                        imageUrl: generatedImage || null, // ✅ pass AI-generated image if available
+                    },
+                    platform,
+                    scheduledTime,
+                },
                 { headers: { "x-auth-token": token } }
             );
 
             if (res.data.success) {
                 toast.success("✅ Post scheduled successfully with AI image!");
-                setGeneratedImage(res.data.post.mediaUrl || "");
-                setContent("");
+                setGeneratedImage(""); // clear preview                setContent("");
                 setScheduledTime("");
             } else {
-                toast.error(res.data.message || "Error scheduling post.");
+                toast.error(res.data.message || "❌ Error scheduling post.");
             }
         } catch (err) {
             console.error(err.response?.data || err.message);
-            toast.error(err.response?.data?.message || "Error scheduling post.");
+            toast.error(err.response?.data?.message || "❌ Error scheduling post.");
         }
     };
-
 
     return (
         <div className="posts-container-flex">
@@ -81,7 +86,10 @@ const Posts = () => {
 
                     <div className="form-group">
                         <label>AI Prompt</label>
-                        <AiHelper setContent={setContent} />
+                        <AiHelper
+                            setContent={setContent}
+                            setGeneratedImage={setGeneratedImage} // ✅ pass image back from AiHelper
+                        />
                     </div>
 
                     <div className="form-group">

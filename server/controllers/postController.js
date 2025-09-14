@@ -1,4 +1,3 @@
-// controllers/postController.js
 const Post = require("../models/Post");
 const { generateImage } = require("../services/aiService");
 
@@ -11,8 +10,8 @@ exports.createPost = async (req, res) => {
             return res.status(400).json({ success: false, msg: "Missing required fields" });
         }
 
-        // ✅ Call AI service to generate an image
-        const mediaUrl = await generateImage(content);
+        // ✅ Generate AI image
+        const mediaUrl = await generateImage(content.text || content);
 
         const post = new Post({
             user: userId,
