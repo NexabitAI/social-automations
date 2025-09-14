@@ -32,8 +32,8 @@ const PostSchema = new mongoose.Schema({
             type: String,
             required: true
         },
-        imageUrl: String,          // For AI-generated images
-        uploadedImageUrl: String   // For user-uploaded images
+        imageUrl: String,
+        uploadedImageUrl: String
     },
     platforms: [PlatformSchema],
     globalStatus: {

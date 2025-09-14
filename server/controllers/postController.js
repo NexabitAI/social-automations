@@ -4,21 +4,30 @@ const { generateImage } = require("../services/aiService");
 exports.createPost = async (req, res) => {
     try {
         const { content, platform, scheduledTime } = req.body;
-        const userId = req.user.id; // comes from auth middleware
+        const userId = req.user.id;
 
         if (!content || !platform || !scheduledTime) {
             return res.status(400).json({ success: false, msg: "Missing required fields" });
         }
 
-        // ✅ Generate AI image
-        const mediaUrl = await generateImage(content.text || content);
+        // Use frontend image or generate AI image
+        let imageUrl = content.imageUrl || await generateImage(content.text || content);
 
+        // Create a post per platform inside the array
         const post = new Post({
             user: userId,
-            platform,
-            content,
-            mediaUrl,
-            scheduledTime
+            content: {
+                text: content.text || content,
+                imageUrl: imageUrl
+            },
+            platforms: [
+                {
+                    name: platform,
+                    status: 'scheduled',
+                    scheduledFor: scheduledTime,
+                    // mediaUrl / platformPostId will be filled by scheduler
+                }
+            ]
         });
 
         await post.save();
@@ -29,6 +38,7 @@ exports.createPost = async (req, res) => {
         res.status(500).json({ success: false, msg: "Server error" });
     }
 };
+
 
 exports.getPosts = async (req, res) => {
     try {
