@@ -7,7 +7,7 @@ const connectDB = require('./config/database');
 const authRoutes = require('./routes/auth');
 const platformRoutes = require('./routes/platforms');
 const postRoutes = require('./routes/posts');
-
+const { startPostScheduler } = require("./jobs/postScheduler");
 connectDB();
 
 const app = express();
@@ -36,3 +36,4 @@ const PORT = process.env.PORT || 8002;
 app.listen(PORT, () => {
     console.log(`Server running in ${process.env.NODE_ENV} mode on port ${PORT}`);
 });
+startPostScheduler();

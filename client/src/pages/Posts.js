@@ -21,32 +21,34 @@ const Posts = () => {
         e.preventDefault();
 
         const token = localStorage.getItem("token");
-
         if (!content || !scheduledTime) {
             toast.error("Please fill in content and scheduled time.");
             return;
         }
 
         try {
+            const API_URL = "https://buzzpilot.app/api";
+
             const res = await axios.post(
-                "http://localhost:5000/api/posts",
+                `${API_URL}/posts`,
                 { content, platform, scheduledTime },
                 { headers: { "x-auth-token": token } }
             );
 
             if (res.data.success) {
-                toast.success("Post scheduled successfully with AI image!");
-                setGeneratedImage(res.data.post.mediaUrl); // ✅ set image from response
+                toast.success("✅ Post scheduled successfully with AI image!");
+                setGeneratedImage(res.data.post.mediaUrl || "");
                 setContent("");
                 setScheduledTime("");
             } else {
-                toast.error("Error scheduling post.");
+                toast.error(res.data.message || "Error scheduling post.");
             }
         } catch (err) {
             console.error(err.response?.data || err.message);
-            toast.error("Error scheduling post.");
+            toast.error(err.response?.data?.message || "Error scheduling post.");
         }
     };
+
 
     return (
         <div className="posts-container-flex">
