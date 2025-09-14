@@ -1,5 +1,4 @@
 import React, { useState } from "react";
-import axios from "axios";
 import api from "../api/api";
 
 const AiHelper = ({ setContent }) => {
@@ -8,8 +7,18 @@ const AiHelper = ({ setContent }) => {
 
     const generate = async () => {
         setLoading(true);
-        const res = await api.post("/api/openai/generate", { prompt });
-        setContent(res.data.content);
+        try {
+            const res = await api.post("/api/openai/generate", { prompt });
+
+            if (res.data.success) {
+                setContent(res.data.content); // ✅ sets text in parent Posts
+                if (res.data.imageUrl) {
+                    localStorage.setItem("aiGeneratedImage", res.data.imageUrl); // optional, so Posts can pick it up
+                }
+            }
+        } catch (err) {
+            console.error("AI error:", err.response?.data || err.message);
+        }
         setLoading(false);
     };
 

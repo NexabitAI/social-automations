@@ -8,7 +8,7 @@ const authRoutes = require('./routes/auth');
 const platformRoutes = require('./routes/platforms');
 const postRoutes = require('./routes/posts');
 const { startPostScheduler } = require("./jobs/postScheduler");
-import openaiRoutes from './routes/openai.js';
+const openaiRoutes = require('./routes/openai.js');
 
 connectDB();
 

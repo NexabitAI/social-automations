@@ -1,33 +1,29 @@
-import express from "express";
-import OpenAI from "openai";
-import dotenv from "dotenv";
-
-dotenv.config();
-
+const express = require("express");
+const { generatePost } = require("../services/openaiService");
 const router = express.Router();
-const openai = new OpenAI({
-    apiKey: process.env.OPENAI_API_KEY,
-});
-
 
 router.post("/generate", async (req, res) => {
-    const { prompt } = req.body;
-
     try {
-        const completion = await openai.chat.completions.create({
-            model: "gpt-4o",
-            messages: [
-                { role: "system", content: "You are a social media content assistant." },
-                { role: "user", content: prompt },
-            ],
-        });
+        const { prompt } = req.body;
+        if (!prompt) {
+            return res.status(400).json({ error: "Prompt is required" });
+        }
 
-        const aiResponse = completion.choices[0].message.content;
-        res.json({ success: true, content: aiResponse });
+        const { text, imageUrl } = await generatePost(prompt);
+
+        if (!text && !imageUrl) {
+            return res.status(500).json({ error: "Failed to generate post" });
+        }
+
+        res.json({
+            success: true,
+            content: text,
+            imageUrl
+        });
     } catch (err) {
-        console.error(err);
-        res.status(500).json({ success: false, error: err.message });
+        console.error("OpenAI route error:", err.message);
+        res.status(500).json({ error: "Server error" });
     }
 });
 
-export default router;
+module.exports = router;

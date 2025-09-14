@@ -1,23 +1,48 @@
-// services/aiService.js
 const OpenAI = require("openai");
 
 const openai = new OpenAI({
     apiKey: process.env.OPENAI_API_KEY
 });
 
-async function generateImage(prompt) {
+async function generateText(prompt) {
     try {
-        const result = await openai.images.generate({
-            model: "gpt-image-1",
-            prompt,
-            size: "512x512"
+        const response = await openai.chat.completions.create({
+            model: "gpt-4o-mini",
+            messages: [
+                { role: "system", content: "You are a social media assistant that creates engaging short posts." },
+                { role: "user", content: prompt }
+            ],
+            max_tokens: 150
         });
 
-        return result.data[0].url; // ✅ AI image URL
+        return response.choices[0].message.content.trim();
     } catch (err) {
-        console.error("AI image generation error:", err.message);
-        return null; // fallback
+        console.error("AI text generation error:", err.message);
+        return null;
     }
 }
 
-module.exports = { generateImage };
+async function generateImage(prompt) {
+    try {
+        const response = await openai.images.generate({
+            model: "gpt-image-1", // or dall-e-3 if your account has it
+            prompt,
+            n: 1,
+            size: "1024x1024",
+        });
+
+        return response.data[0].url;
+    } catch (err) {
+        console.error("AI image generation error:", err.message);
+        return null;
+    }
+}
+
+async function generatePost(prompt) {
+    const text = await generateText(prompt);
+    const imageUrl = await generateImage(prompt);
+
+    return { text, imageUrl };
+}
+
+module.exports = { generatePost };
