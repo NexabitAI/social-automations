@@ -25,7 +25,7 @@ async function generateText(prompt) {
 async function generateImage(prompt) {
     try {
         const response = await openai.images.generate({
-            model: "gpt-image-1", // or dall-e-3 if your account has it
+            model: "dall-e-3",
             prompt,
             n: 1,
             size: "1024x1024",
@@ -41,7 +41,6 @@ async function generateImage(prompt) {
 async function generatePost(prompt) {
     const text = await generateText(prompt);
     const imageUrl = await generateImage(prompt);
-
     return { text, imageUrl };
 }
 

@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import api from "../api/api";
 
-const AiHelper = ({ setContent }) => {
+const AiHelper = ({ setContent, setGeneratedImage }) => {
     const [prompt, setPrompt] = useState("");
     const [loading, setLoading] = useState(false);
 
@@ -11,9 +11,11 @@ const AiHelper = ({ setContent }) => {
             const res = await api.post("/api/openai/generate", { prompt });
 
             if (res.data.success) {
-                setContent(res.data.content); // ✅ sets text in parent Posts
+                if (res.data.content) {
+                    setContent(res.data.content); // ✅ set text
+                }
                 if (res.data.imageUrl) {
-                    localStorage.setItem("aiGeneratedImage", res.data.imageUrl); // optional, so Posts can pick it up
+                    setGeneratedImage(res.data.imageUrl); // ✅ set image in parent
                 }
             }
         } catch (err) {
@@ -24,8 +26,15 @@ const AiHelper = ({ setContent }) => {
 
     return (
         <div style={{ margin: "10px 0" }}>
-            <input value={prompt} onChange={(e) => setPrompt(e.target.value)} placeholder="Enter prompt for AI" style={{ width: "80%" }} />
-            <button onClick={generate} disabled={loading}>{loading ? "Generating..." : "Generate Post"}</button>
+            <input
+                value={prompt}
+                onChange={(e) => setPrompt(e.target.value)}
+                placeholder="Enter prompt for AI"
+                style={{ width: "80%" }}
+            />
+            <button onClick={generate} disabled={loading}>
+                {loading ? "Generating..." : "Generate Post"}
+            </button>
         </div>
     );
 };

@@ -1,5 +1,5 @@
 const express = require("express");
-const { generatePost } = require("../services/openaiService");
+const { generatePost } = require("../services/aiService");
 const router = express.Router();
 
 router.post("/generate", async (req, res) => {
