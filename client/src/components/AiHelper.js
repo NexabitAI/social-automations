@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import axios from "axios";
+import api from "../api/api";
 
 const AiHelper = ({ setContent }) => {
     const [prompt, setPrompt] = useState("");
@@ -7,7 +8,7 @@ const AiHelper = ({ setContent }) => {
 
     const generate = async () => {
         setLoading(true);
-        const res = await axios.post("http://localhost:5000/api/openai/generate", { prompt });
+        const res = await api.post("/api/openai/generate", { prompt });
         setContent(res.data.content);
         setLoading(false);
     };

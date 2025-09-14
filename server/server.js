@@ -8,6 +8,8 @@ const authRoutes = require('./routes/auth');
 const platformRoutes = require('./routes/platforms');
 const postRoutes = require('./routes/posts');
 const { startPostScheduler } = require("./jobs/postScheduler");
+import openaiRoutes from './routes/openai.js';
+
 connectDB();
 
 const app = express();
@@ -25,6 +27,8 @@ app.use(express.json());
 app.use('/api/auth', authRoutes);
 app.use('/api/platforms', platformRoutes); // <- dynamic platform routes
 app.use('/api/posts', postRoutes);
+app.use('/api/openai', openaiRoutes);
+
 
 // Health check
 app.get('/health', (req, res) => {
