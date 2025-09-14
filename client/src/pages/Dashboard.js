@@ -7,6 +7,7 @@ import {
     FaTwitter,
 } from "react-icons/fa";
 import "./Dashboard.css";
+import api from "../api/api";
 
 const platformIcons = {
     facebook: <FaFacebookF color="#1877f2" />,
@@ -19,12 +20,11 @@ const Dashboard = () => {
     const [posts, setPosts] = useState([]);
     const [currentPage, setCurrentPage] = useState(1);
     const postsPerPage = 4;
-
     useEffect(() => {
         const fetchPosts = async () => {
             try {
                 const token = localStorage.getItem("token");
-                const res = await axios.get("http://localhost:5000/api/posts", {
+                const res = await api.get("/api/posts", {
                     headers: { Authorization: `Bearer ${token}` },
                 });
                 setPosts(res.data.posts);
