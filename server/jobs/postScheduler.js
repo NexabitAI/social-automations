@@ -10,26 +10,35 @@ function startPostScheduler() {
         try {
             const now = new Date();
 
-            // Find due posts
+            // Find posts where at least one platform is due & still scheduled
             const posts = await Post.find({
-                status: "scheduled",
-                scheduledTime: { $lte: now }
+                "platforms.status": "scheduled",
+                "platforms.scheduledFor": { $lte: now }
             });
 
             for (let post of posts) {
-                try {
-                    await publishPost(post);
+                for (let platform of post.platforms) {
+                    if (platform.status === "scheduled" && platform.scheduledFor <= now) {
+                        try {
+                            // Call publisher service
+                            const response = await publishPost(post.user, platform.name, post.content);
 
-                    post.status = "posted";
-                    post.publishedAt = new Date();
-                    await post.save();
+                            platform.status = "published";
+                            platform.publishedAt = new Date();
+                            platform.responseLog = response;
+                            platform.platformPostId = response?.id || null;
 
-                    console.log(`✅ Posted: ${post._id} to ${post.platform}`);
-                } catch (err) {
-                    console.error(`❌ Failed to post ${post._id}:`, err.message);
-                    post.status = "failed";
-                    await post.save();
+                            console.log(`✅ Posted: ${post._id} to ${platform.name}`);
+                        } catch (err) {
+                            console.error(`❌ Failed to post ${post._id} to ${platform.name}:`, err.message);
+                            platform.status = "failed";
+                            platform.errorMessage = err.message;
+                        }
+                    }
                 }
+
+                // save post with updated platform statuses → pre('save') hook will update globalStatus
+                await post.save();
             }
         } catch (err) {
             console.error("Scheduler error:", err.message);
