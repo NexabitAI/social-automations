@@ -4,12 +4,12 @@ const axios = require('axios');
 const jwt = require('jsonwebtoken');
 const { connectPlatform, getPlatform } = require('../controllers/platformController');
 const authMiddleware = require('../middleware/auth');
+const { savePlatformAuth } = require('../services/platformService');
 
 const router = express.Router();
 
 /**
  * Step 1: Redirect user to platform OAuth
- * Example: GET /api/platforms/facebook/auth?userId=USER_ID
  */
 router.get('/:platform/auth', (req, res) => {
     const { platform } = req.params;
@@ -17,7 +17,7 @@ router.get('/:platform/auth', (req, res) => {
 
     if (!userId) return res.status(400).send("Missing userId");
 
-    // Encode userId into state (signed, expires in 10 min)
+    // Encode userId into state (JWT, expires in 10 min)
     const state = jwt.sign({ userId }, process.env.JWT_SECRET, { expiresIn: "10m" });
 
     const BACKEND_URL = process.env.BACKEND_URL || "https://buzzpilot.app";
@@ -28,14 +28,6 @@ router.get('/:platform/auth', (req, res) => {
             const redirectUri = `${BACKEND_URL}/api/platforms/facebook/callback`;
             const scope = 'pages_manage_posts,pages_read_engagement,pages_show_list';
             const url = `https://www.facebook.com/v17.0/dialog/oauth?client_id=${fbAppId}&redirect_uri=${encodeURIComponent(redirectUri)}&state=${state}&scope=${scope}`;
-            return res.redirect(url);
-        }
-
-        case 'instagram': {
-            const igAppId = process.env.FB_APP_ID;
-            const redirectUri = `${BACKEND_URL}/api/platforms/instagram/callback`;
-            const scope = 'instagram_basic,pages_show_list';
-            const url = `https://www.facebook.com/v17.0/dialog/oauth?client_id=${igAppId}&redirect_uri=${encodeURIComponent(redirectUri)}&state=${state}&scope=${scope}`;
             return res.redirect(url);
         }
 
@@ -72,7 +64,7 @@ router.get('/:platform/callback', async (req, res) => {
                 const fbAppSecret = process.env.FB_APP_SECRET;
                 const redirectUri = `${BACKEND_URL}/api/platforms/facebook/callback`;
 
-                // Exchange code for user access token
+                // Exchange code → user access token
                 const tokenRes = await axios.get('https://graph.facebook.com/v17.0/oauth/access_token', {
                     params: { client_id: fbAppId, client_secret: fbAppSecret, redirect_uri: redirectUri, code }
                 });
@@ -86,24 +78,14 @@ router.get('/:platform/callback', async (req, res) => {
 
                 if (!pages.length) return res.send("No Facebook pages found");
 
-                // Save first page directly using controller
-                await connectPlatform({
-                    user: { id: userId },
-                    body: {
-                        authData: {
-                            pageId: pages[0].id,
-                            pageName: pages[0].name,
-                            pageAccessToken: pages[0].access_token
-                        }
-                    }
+                // Save first page
+                await savePlatformAuth(userId, 'facebook', {
+                    pageId: pages[0].id,
+                    pageName: pages[0].name,
+                    accessToken: pages[0].access_token
                 });
 
                 return res.send("✅ Facebook connected successfully! You can close this tab.");
-            }
-
-            case 'instagram': {
-                // TODO: Exchange code -> access_token -> IG business account
-                return res.send("Instagram callback connected! Implement token exchange.");
             }
 
             case 'linkedin': {
@@ -111,6 +93,7 @@ router.get('/:platform/callback', async (req, res) => {
                 const clientSecret = process.env.LINKEDIN_CLIENT_SECRET;
                 const redirectUri = `${BACKEND_URL}/api/platforms/linkedin/callback`;
 
+                // Exchange code → access token
                 const tokenRes = await axios.post('https://www.linkedin.com/oauth/v2/accessToken', null, {
                     params: {
                         grant_type: 'authorization_code',
@@ -124,10 +107,7 @@ router.get('/:platform/callback', async (req, res) => {
 
                 const accessToken = tokenRes.data.access_token;
 
-                await connectPlatform({
-                    user: { id: userId },
-                    body: { authData: { accessToken } }
-                });
+                await savePlatformAuth(userId, 'linkedin', { accessToken });
 
                 return res.send("✅ LinkedIn connected successfully! You can close this tab.");
             }
@@ -141,7 +121,7 @@ router.get('/:platform/callback', async (req, res) => {
     }
 });
 
-// Save platform auth (POST) & get connection status (GET)
+// Save & Get (manual API endpoints)
 router.post('/:platform', authMiddleware, connectPlatform);
 router.get('/:platform', authMiddleware, getPlatform);
 
