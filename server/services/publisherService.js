@@ -12,15 +12,33 @@ async function publishPost(userId, platformName, content) {
             throw new Error("Facebook not connected");
         }
 
-        const url = `https://graph.facebook.com/${fb.pageId}/photos`;
-        const params = {
-            url: content.imageUrl,
-            caption: content.text,
-            access_token: fb.pageAccessToken
-        };
+        let url;
+        let params;
 
-        const res = await axios.post(url, null, { params });
-        return res.data;
+        // If image exists, post as photo
+        if (content.imageUrl) {
+            url = `https://graph.facebook.com/${fb.pageId}/photos`;
+            params = {
+                url: content.imageUrl,
+                caption: content.text || "",
+                access_token: fb.pageAccessToken
+            };
+        } else {
+            // Text-only post
+            url = `https://graph.facebook.com/${fb.pageId}/feed`;
+            params = {
+                message: content.text,
+                access_token: fb.pageAccessToken
+            };
+        }
+
+        try {
+            const res = await axios.post(url, null, { params });
+            return res.data; // includes post id
+        } catch (err) {
+            console.error("Facebook post error:", err.response?.data || err.message);
+            throw new Error(err.response?.data?.error?.message || "Failed to post on Facebook");
+        }
     }
 
     // TODO: Add LinkedIn, Instagram, Twitter later

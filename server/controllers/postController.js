@@ -25,7 +25,6 @@ exports.createPost = async (req, res) => {
                     name: platform,
                     status: 'scheduled',
                     scheduledFor: scheduledTime,
-                    // mediaUrl / platformPostId will be filled by scheduler
                 }
             ]
         });
