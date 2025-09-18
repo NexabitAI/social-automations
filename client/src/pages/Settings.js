@@ -3,6 +3,7 @@ import { FaFacebookF, FaInstagram, FaLinkedinIn, FaTwitter } from "react-icons/f
 import "./Settings.css";
 import api from "../api/api";
 import { jwtDecode } from "jwt-decode";
+
 const Settings = () => {
     const [connected, setConnected] = useState({
         facebook: false,
@@ -17,7 +18,7 @@ const Settings = () => {
         const token = localStorage.getItem("token");
         if (token) {
             const decoded = jwtDecode(token);
-            setUserId(decoded.user?.id); // assuming backend signs { user: { id } }
+            setUserId(decoded.id || decoded.user?.id); // ✅ safer
         }
 
         const fetchUserPlatforms = async () => {
@@ -44,14 +45,19 @@ const Settings = () => {
         const token = localStorage.getItem("token");
         if (!userId) return alert("User not loaded");
 
-        // Open OAuth in a new tab/window (send userId, backend will wrap it in short JWT)
         window.open(
             `${process.env.REACT_APP_BACKEND_URL}/api/platforms/${platform}/auth?userId=${userId}`,
             "_blank"
         );
 
-        // Poll backend every 3 seconds until connection is detected
+        let elapsed = 0;
         const interval = setInterval(async () => {
+            elapsed += 3;
+            if (elapsed > 60) {
+                clearInterval(interval);
+                console.warn(`Timeout waiting for ${platform} connection`);
+                return;
+            }
             try {
                 const res = await api.get(`/api/platforms/${platform}`, {
                     headers: { "x-auth-token": token },
