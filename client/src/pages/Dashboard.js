@@ -20,13 +20,12 @@ const Dashboard = () => {
     const [posts, setPosts] = useState([]);
     const [currentPage, setCurrentPage] = useState(1);
     const postsPerPage = 4;
+
     useEffect(() => {
         const fetchPosts = async () => {
             try {
                 const token = localStorage.getItem("token");
-                const res = await api.get("/api/posts", {
-                    headers: { Authorization: `Bearer ${token}` },
-                });
+                const res = await api.get("/api/posts", { headers: { "x-auth-token": token } });
                 setPosts(res.data.posts);
             } catch (err) {
                 console.error(err.response?.data || err.message);
@@ -52,8 +51,6 @@ const Dashboard = () => {
 
     return (
         <div className="dashboard-container">
-            {/* <h2>Your Scheduled Posts</h2> */}
-
             {posts.length === 0 ? (
                 <div className="loader-container">
                     <div className="spinner"></div>
@@ -61,40 +58,49 @@ const Dashboard = () => {
             ) : (
                 <>
                     <div className="posts-grid">
-                        {currentPosts.map((post) => (
-                            <div className={`post-card ${post.platform}`} key={post._id}>
-                                <div className="post-header">
-                                    {platformIcons[post.platform]}
-                                    <span className="platform-name">{post.platform.toUpperCase()}</span>
-                                </div>
-
-                                {/* ✅ Show post image if exists */}
-                                {post.mediaUrl && (
-                                    <div className="post-image">
-                                        <img
-                                            src={post.mediaUrl}
-                                            alt="AI Generated"
-                                            className="dashboard-post-image"
-                                        />
+                        {currentPosts.map((post) => {
+                            // ✅ Show the first platform for card (UI stays same)
+                            const platform = post.platforms[0] || {};
+                            return (
+                                <div className={`post-card ${platform.name}`} key={post._id}>
+                                    <div className="post-header">
+                                        {platformIcons[platform.name]}
+                                        <span className="platform-name">
+                                            {platform.name?.toUpperCase() || "N/A"}
+                                        </span>
                                     </div>
-                                )}
 
-                                <p>
-                                    {post.content.split(" ").length > 20
-                                        ? post.content.split(" ").slice(0, 20).join(" ") + " ..."
-                                        : post.content}
-                                </p>
+                                    {/* ✅ Show post image if exists */}
+                                    {post.content?.imageUrl && (
+                                        <div className="post-image">
+                                            <img
+                                                src={post.content.imageUrl}
+                                                alt="AI Generated"
+                                                className="dashboard-post-image"
+                                            />
+                                        </div>
+                                    )}
 
-                                <div className="post-footer">
-                                    <small>
-                                        Scheduled: {new Date(post.scheduledTime).toLocaleString()}
-                                    </small>
-                                    <span className={`status-badge ${post.status}`}>
-                                        {post.status}
-                                    </span>
+                                    <p>
+                                        {post.content?.text?.split(" ").length > 20
+                                            ? post.content.text.split(" ").slice(0, 20).join(" ") + " ..."
+                                            : post.content?.text}
+                                    </p>
+
+                                    <div className="post-footer">
+                                        <small>
+                                            Scheduled:{" "}
+                                            {platform.scheduledFor
+                                                ? new Date(platform.scheduledFor).toLocaleString()
+                                                : "N/A"}
+                                        </small>
+                                        <span className={`status-badge ${platform.status}`}>
+                                            {platform.status}
+                                        </span>
+                                    </div>
                                 </div>
-                            </div>
-                        ))}
+                            );
+                        })}
                     </div>
 
                     <div className="pagination">

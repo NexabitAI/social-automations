@@ -1,49 +1,105 @@
 // jobs/postScheduler.js
 const cron = require("node-cron");
 const Post = require("../models/Post");
-const { publishPost } = require("../services/publisherService");
+const Platform = require("../models/Platform");
+const axios = require("axios");
 
 function startPostScheduler() {
-    // Run every minute
-    cron.schedule("* * * * *", async () => {
-        console.log("⏰ Checking scheduled posts...");
-        try {
+    cron.schedule(
+        "* * * * *",
+        async () => {
             const now = new Date();
+            console.log("⏰ Scheduler tick at", now.toISOString());
 
-            // Find posts where at least one platform is due & still scheduled
-            const posts = await Post.find({
+            // 🔎 Find posts that should run now or earlier
+            const duePosts = await Post.find({
                 "platforms.status": "scheduled",
-                "platforms.scheduledFor": { $lte: now }
-            });
+                "platforms.scheduledFor": { $lte: now },
+            }).populate("user");
 
-            for (let post of posts) {
-                for (let platform of post.platforms) {
-                    if (platform.status === "scheduled" && platform.scheduledFor <= now) {
-                        try {
-                            // Call publisher service
-                            const response = await publishPost(post.user, platform.name, post.content);
+            console.log(`📌 Found ${duePosts.length} due post(s)`);
 
-                            platform.status = "published";
-                            platform.publishedAt = new Date();
-                            platform.responseLog = response;
-                            platform.platformPostId = response?.id || null;
+            for (const post of duePosts) {
+                for (const platform of post.platforms) {
+                    if (platform.status !== "scheduled" || platform.scheduledFor > now) continue;
 
-                            console.log(`✅ Posted: ${post._id} to ${platform.name}`);
-                        } catch (err) {
-                            console.error(`❌ Failed to post ${post._id} to ${platform.name}:`, err.message);
-                            platform.status = "failed";
-                            platform.errorMessage = err.message;
+                    try {
+                        // 🔑 Get platform connection for this user
+                        const connection = await Platform.findOne({
+                            user: post.user._id,
+                            platform: platform.name,
+                        });
+
+                        if (!connection) {
+                            throw new Error(`${platform.name} not connected for user`);
                         }
+
+                        let response;
+
+                        if (platform.name === "facebook") {
+                            const { pageId, accessToken } = connection.authData;
+
+                            if (!pageId || !accessToken) {
+                                throw new Error("Missing pageId or accessToken");
+                            }
+
+                            let url, data;
+                            if (post.content.imageUrl) {
+                                // ✅ Post image with caption
+                                url = `https://graph.facebook.com/${pageId}/photos`;
+                                data = {
+                                    url: post.content.imageUrl,
+                                    caption: post.content.text,
+                                    access_token: accessToken,
+                                };
+                            } else {
+                                // ✅ Post text only
+                                url = `https://graph.facebook.com/${pageId}/feed`;
+                                data = {
+                                    message: post.content.text,
+                                    access_token: accessToken,
+                                };
+                            }
+
+                            response = await axios.post(url, data);
+                        }
+
+                        // ✅ Update platform status
+                        platform.status = "published";
+                        platform.publishedAt = new Date();
+                        platform.responseLog = response?.data || {};
+                        platform.platformPostId = response?.data?.id || null;
+
+                        console.log(`✅ Posted ${post._id} to ${platform.name}`);
+                    } catch (err) {
+                        console.error(
+                            `❌ Error posting ${post._id} to ${platform.name}:`,
+                            err.response?.data || err.message
+                        );
+
+                        platform.status = "failed";
+                        platform.errorMessage = err.response?.data || err.message;
                     }
                 }
 
-                // save post with updated platform statuses → pre('save') hook will update globalStatus
+                // ✅ Update global status
+                const statuses = post.platforms.map((p) => p.status);
+                if (statuses.every((s) => s === "published")) {
+                    post.globalStatus = "published";
+                } else if (statuses.includes("failed") && statuses.includes("published")) {
+                    post.globalStatus = "partially_published";
+                } else if (statuses.every((s) => s === "failed")) {
+                    post.globalStatus = "failed";
+                }
+
                 await post.save();
             }
-        } catch (err) {
-            console.error("Scheduler error:", err.message);
+        },
+        {
+            scheduled: true,
+            timezone: "Asia/Karachi", // ✅ match your local timezone
         }
-    });
+    );
 }
 
 module.exports = { startPostScheduler };
