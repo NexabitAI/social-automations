@@ -11,17 +11,18 @@ exports.createPost = async (req, res) => {
             return res.status(400).json({ success: false, msg: "Missing required fields" });
         }
 
-        // Step 1: Use frontend image or generate AI image
         let finalImageUrl = content.imageUrl;
+
+        // Step 1: Generate AI image if none provided
         if (!finalImageUrl) {
             const generatedImage = await generateImage(content.text || content);
 
-            // Step 2: Upload to Cloudinary
+            // Step 2: Upload to Cloudinary and use secure_url
             const uploadRes = await cloudinary.uploader.upload(generatedImage, {
                 folder: "social-automations",
             });
 
-            finalImageUrl = uploadRes.secure_url;
+            finalImageUrl = uploadRes.secure_url; // ✅ guaranteed public HTTPS
         }
 
         // Step 3: Save post in DB
@@ -29,13 +30,13 @@ exports.createPost = async (req, res) => {
             user: userId,
             content: {
                 text: content.text || content,
-                imageUrl: finalImageUrl,
+                imageUrl: finalImageUrl, // ✅ safe URL for Facebook API
             },
             platforms: [
                 {
                     name: platform,
                     status: "scheduled",
-                    scheduledFor: scheduledTime,
+                    scheduledFor: new Date(scheduledTime),
                 }
             ]
         });
@@ -44,10 +45,11 @@ exports.createPost = async (req, res) => {
 
         return res.json({ success: true, post });
     } catch (err) {
-        console.error("❌ Error creating post:", err.message);
+        console.error("❌ Error creating post:", err);
         res.status(500).json({ success: false, msg: "Server error" });
     }
 };
+
 
 exports.getPosts = async (req, res) => {
     try {
