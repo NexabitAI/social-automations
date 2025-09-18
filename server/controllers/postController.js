@@ -1,8 +1,8 @@
-import Post from "../models/Post.js";
-import { generateImage } from "../services/aiService.js";
-import cloudinary from "../services/cloudinary.js";
+const Post = require("../models/Post");
+const { generateImage } = require("../services/aiService");
+const cloudinary = require("../services/cloudinary");
 
-export const createPost = async (req, res) => {
+exports.createPost = async (req, res) => {
     try {
         const { content, platform, scheduledTime } = req.body;
         const userId = req.user.id;
@@ -16,9 +16,9 @@ export const createPost = async (req, res) => {
         if (!finalImageUrl) {
             const generatedImage = await generateImage(content.text || content);
 
-            // Step 2: Upload AI image to Cloudinary
+            // Step 2: Upload to Cloudinary
             const uploadRes = await cloudinary.uploader.upload(generatedImage, {
-                folder: "social-automations", // optional: organizes uploads
+                folder: "social-automations",
             });
 
             finalImageUrl = uploadRes.secure_url;
@@ -36,8 +36,8 @@ export const createPost = async (req, res) => {
                     name: platform,
                     status: "scheduled",
                     scheduledFor: scheduledTime,
-                },
-            ],
+                }
+            ]
         });
 
         await post.save();
@@ -49,7 +49,7 @@ export const createPost = async (req, res) => {
     }
 };
 
-export const getPosts = async (req, res) => {
+exports.getPosts = async (req, res) => {
     try {
         const posts = await Post.find({ user: req.user.id }).sort({ createdAt: -1 });
         res.json({ success: true, posts });
