@@ -1,3 +1,5 @@
+// controllers/postController.js
+const moment = require("moment-timezone");
 const Post = require("../models/Post");
 const { generateImage } = require("../services/aiService");
 const cloudinary = require("../services/cloudinary");
@@ -11,18 +13,20 @@ exports.createPost = async (req, res) => {
             return res.status(400).json({ success: false, msg: "Missing required fields" });
         }
 
-        let finalImageUrl = content.imageUrl;
+        // 🔥 Convert local (Pakistan) time to UTC before saving
+        const scheduledUTC = moment.tz(scheduledTime, "Asia/Karachi").toDate();
 
-        // Step 1: Generate AI image if none provided
+        // Step 1: Use frontend image or generate AI image
+        let finalImageUrl = content.imageUrl;
         if (!finalImageUrl) {
             const generatedImage = await generateImage(content.text || content);
 
-            // Step 2: Upload to Cloudinary and use secure_url
+            // Step 2: Upload to Cloudinary
             const uploadRes = await cloudinary.uploader.upload(generatedImage, {
                 folder: "social-automations",
             });
 
-            finalImageUrl = uploadRes.secure_url; // ✅ guaranteed public HTTPS
+            finalImageUrl = uploadRes.secure_url;
         }
 
         // Step 3: Save post in DB
@@ -30,13 +34,13 @@ exports.createPost = async (req, res) => {
             user: userId,
             content: {
                 text: content.text || content,
-                imageUrl: finalImageUrl, // ✅ safe URL for Facebook API
+                imageUrl: finalImageUrl,
             },
             platforms: [
                 {
                     name: platform,
                     status: "scheduled",
-                    scheduledFor: new Date(scheduledTime),
+                    scheduledFor: scheduledUTC, // ✅ save as UTC
                 }
             ]
         });
@@ -45,18 +49,7 @@ exports.createPost = async (req, res) => {
 
         return res.json({ success: true, post });
     } catch (err) {
-        console.error("❌ Error creating post:", err);
-        res.status(500).json({ success: false, msg: "Server error" });
-    }
-};
-
-
-exports.getPosts = async (req, res) => {
-    try {
-        const posts = await Post.find({ user: req.user.id }).sort({ createdAt: -1 });
-        res.json({ success: true, posts });
-    } catch (err) {
-        console.error("❌ Error fetching posts:", err.message);
+        console.error("❌ Error creating post:", err.message);
         res.status(500).json({ success: false, msg: "Server error" });
     }
 };
