@@ -13,13 +13,12 @@ const PlatformSchema = new mongoose.Schema({
         required: true
     },
     authData: {
-        // Each platform stores different token data
-        accessToken: String,        // For LinkedIn, Twitter
-        refreshToken: String,       // If supported
-        pageId: String,             // For Facebook/Instagram
-        pageAccessToken: String,    // For Facebook/Instagram Page posting
-        linkedinId: String,         // For LinkedIn (person/org ID)
-        expiresAt: Date             // Token expiry
+        accessToken: String,
+        refreshToken: String,
+        pageId: String,
+        pageAccessToken: String,
+        linkedinId: String,
+        expiresAt: Date
     },
     connectedAt: {
         type: Date,
@@ -30,7 +29,6 @@ const PlatformSchema = new mongoose.Schema({
     timestamps: true
 });
 
-// Prevent duplicate entries for same user + platform
 PlatformSchema.index({ user: 1, platform: 1 }, { unique: true });
 
 module.exports = mongoose.model("Platform", PlatformSchema);

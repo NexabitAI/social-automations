@@ -65,6 +65,39 @@ function startPostScheduler() {
                                 response = await axios.post(url, data);
                             }
 
+                            if (platform.name === "instagram") {
+                                const { igUserId, accessToken } = connection.authData;
+
+                                if (!igUserId || !accessToken) {
+                                    throw new Error("Missing igUserId or accessToken");
+                                }
+
+                                if (!post.content.imageUrl) {
+                                    throw new Error("Instagram requires an imageUrl");
+                                }
+
+                                // Step 1: Create media container
+                                const mediaRes = await axios.post(
+                                    `https://graph.facebook.com/v17.0/${igUserId}/media`,
+                                    {
+                                        image_url: post.content.imageUrl,
+                                        caption: post.content.text || "",
+                                        access_token: accessToken,
+                                    }
+                                );
+
+                                const creationId = mediaRes.data.id;
+
+                                // Step 2: Publish media
+                                response = await axios.post(
+                                    `https://graph.facebook.com/v17.0/${igUserId}/media_publish`,
+                                    {
+                                        creation_id: creationId,
+                                        access_token: accessToken,
+                                    }
+                                );
+                            }
+
                             // ✅ Update platform status
                             platform.status = "published";
                             platform.publishedAt = new Date();

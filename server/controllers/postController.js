@@ -53,3 +53,15 @@ exports.createPost = async (req, res) => {
         res.status(500).json({ success: false, msg: "Server error" });
     }
 };
+
+
+
+exports.getPosts = async (req, res) => {
+    try {
+        const posts = await Post.find({ user: req.user.id }).sort({ createdAt: -1 });
+        res.json({ success: true, posts });
+    } catch (err) {
+        console.error("❌ Error fetching posts:", err.message);
+        res.status(500).json({ success: false, msg: "Server error" });
+    }
+};
